@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numbers Quiz for [Name]</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background-color: #fdf6e3;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: #d35400;
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px #f39c12;
+        }
+
+        .progress {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+
+        .card {
+            background: white;
+            border: 4px solid #34495e;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 8px 8px 0px #34495e;
+            text-align: center;
+        }
+
+        .question-text {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        .emoji-display {
+            font-size: 3rem;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            word-wrap: break-word;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            font-family: inherit;
+            font-size: 1.8rem;
+            padding: 15px;
+            border: 3px solid #34495e;
+            border-radius: 12px;
+            background-color: #ecf0f1;
+            cursor: pointer;
+            box-shadow: 0px 5px 0px #34495e;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        button:active {
+            transform: translateY(5px);
+            box-shadow: 0px 0px 0px #34495e;
+        }
+
+        button:hover {
+            background-color: #e0e6ed;
+        }
+
+        .correct {
+            background-color: #2ecc71 !important;
+            color: white;
+            border-color: #27ae60 !important;
+            box-shadow: 0px 5px 0px #27ae60 !important;
+        }
+
+        .wrong {
+            background-color: #e74c3c !important;
+            color: white;
+            border-color: #c0392b !important;
+            box-shadow: 0px 5px 0px #c0392b !important;
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        .result-screen {
+            display: none;
+            text-align: center;
+        }
+
+        .result-screen h2 {
+            font-size: 3rem;
+            color: #27ae60;
+        }
+
+        .restart-btn {
+            margin-top: 20px;
+            background-color: #f1c40f;
+            box-shadow: 0px 5px 0px #f39c12;
+            border-color: #f39c12;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Number Adventure! 🚀</h1>
+    <div class="progress" id="progress">Question 1 / 8</div>
+
+    <div class="card" id="quiz-card">
+        <div class="question-text" id="question-text">How many apples?</div>
+        <div class="emoji-display" id="emoji-display">🍎🍎🍎</div>
+        <div class="options" id="options-container">
+            <!-- Buttons get injected here -->
+        </div>
+    </div>
+
+    <div class="card result-screen" id="result-screen">
+        <h2 id="result-title">Yay! You did it! 🎉</h2>
+        <div class="emoji-display" id="result-emoji">🏆🎈🌟</div>
+        <p id="result-score" style="font-size: 1.5rem;"></p>
+        <button class="restart-btn" onclick="startGame()">Play Again! 🔄</button>
+    </div>
+
+    <script>
+        const questions = [
+            { text: "How many apples? (яблуко)", emojis: "🍎🍎🍎", answer: "Three", options: ["Two", "Three", "Five", "Four"] },
+            { text: "How many stars? (зорі)", emojis: "⭐⭐⭐⭐⭐⭐⭐", answer: "Seven", options: ["Seven", "Nine", "Six", "Ten"] },
+            { text: "How many cats? (коти)", emojis: "🐱", answer: "One", options: ["Zero", "Two", "One", "Four"] },
+            { text: "How many frogs? (жаби)", emojis: "🐸🐸🐸🐸🐸🐸🐸🐸🐸🐸", answer: "Ten", options: ["Eight", "Nine", "Five", "Ten"] },
+            { text: "How many pizzas? (піца)", emojis: "🍕🍕🍕🍕🍕", answer: "Five", options: ["Three", "Five", "Seven", "Two"] },
+            { text: "How many ghosts? (привиди)", emojis: "👻", answer: "Zero", options: ["One", "Zero", "Ten", "Six"] },
+            { text: "How many cars? (машини)", emojis: "🚗🚗🚗🚗🚗🚗", answer: "Six", options: ["Four", "Eight", "Six", "Nine"] },
+            { text: "How many balloons? (повітряні кульки)", emojis: "🎈🎈🎈🎈🎈🎈🎈🎈", answer: "Eight", options: ["Seven", "Eight", "Nine", "Ten"] }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let canClick = true;
+
+        const questionText = document.getElementById('question-text');
+        const emojiDisplay = document.getElementById('emoji-display');
+        const optionsContainer = document.getElementById('options-container');
+        const progressText = document.getElementById('progress');
+        const quizCard = document.getElementById('quiz-card');
+        const resultScreen = document.getElementById('result-screen');
+
+        function startGame() {
+            currentQuestion = 0;
+            score = 0;
+            quizCard.style.display = 'block';
+            resultScreen.style.display = 'none';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            canClick = true;
+            const q = questions[currentQuestion];
+            
+            progressText.innerText = `Question ${currentQuestion + 1} / ${questions.length}`;
+            questionText.innerText = q.text;
+            emojiDisplay.innerText = q.emojis;
+            
+            optionsContainer.innerHTML = '';
+            
+            // Shuffle options so it's not predictable
+            const shuffledOptions = q.options.sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach(option => {
+                const btn = document.createElement('button');
+                btn.innerText = option;
+                btn.onclick = () => checkAnswer(btn, option, q.answer);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(btn, selected, correct) {
+            if (!canClick) return;
+            canClick = false;
+
+            if (selected === correct) {
+                btn.classList.add('correct');
+                score++;
+                // Little sound effect using built in browser oscillator
+                playSound(600, 0.1); 
+                setTimeout(() => {
+                    nextQuestion();
+                }, 800);
+            } else {
+                btn.classList.add('wrong');
+                playSound(200, 0.2);
+                
+                // Highlight the correct one
+                Array.from(optionsContainer.children).forEach(b => {
+                    if (b.innerText === correct) {
+                        b.classList.add('correct');
+                    }
+                });
+
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1500);
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            quizCard.style.display = 'none';
+            resultScreen.style.display = 'block';
+            
+            document.getElementById('result-score').innerText = `You got ${score} out of ${questions.length} right!`;
+            
+            if (score === questions.length) {
+                document.getElementById('result-title').innerText = "PERFECT! You are a genius! 🌟";
+                document.getElementById('result-emoji').innerText = "🏆🏆🏆";
+            } else if (score >= 5) {
+                document.getElementById('result-title').innerText = "Great job! 🎉";
+                document.getElementById('result-emoji').innerText = "🎈🎈🎈";
+            } else {
+                document.getElementById('result-title').innerText = "Good try! Let's practice more. 💪";
+                document.getElementById('result-emoji').innerText = "📚✨";
+            }
+        }
+
+        // Simple Web Audio API sound generator (no external files needed)
+        function playSound(freq, duration) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration);
+                osc.stop(ctx.currentTime + duration);
+            } catch(e) {
+                // Ignore audio errors
+            }
+        }
+
+        // Start
+        startGame();
+    </script>
+</body>
+</html>
